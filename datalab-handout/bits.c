@@ -210,8 +210,8 @@ int isAsciiDigit(int x) {
  *   Rating: 3
  */
 int conditional(int x, int y, int z) {
-  int cond = ((!!x) + ~1 + 1);
-  return (z & cond) | (y & ~cond);
+  int flag = ((!!x) + ~1 + 1);
+  return (z & flag) | (y & ~flag);
 }
 /* 
  * isLessOrEqual - if x <= y  then return 1, else return 0 
@@ -221,7 +221,8 @@ int conditional(int x, int y, int z) {
  *   Rating: 3
  */
 int isLessOrEqual(int x, int y) {
-  return 2;
+  int isSameSign = (x >> 31) ^ (y >> 31);
+  return  (!!(isSameSign & (x >> 31))) | (~isSameSign & !((y + ~x + 1) >> 31)) ;
 }
 //4
 /* 
@@ -233,7 +234,9 @@ int isLessOrEqual(int x, int y) {
  *   Rating: 4 
  */
 int logicalNeg(int x) {
-  return 2;
+  int low = ~(x & (~x +1))+1;
+  return (low >> 31) + 1;
+  // return ((x | (~x + 1)) >> 31) + 1;
 }
 /* howManyBits - return the minimum number of bits required to represent x in
  *             two's complement
@@ -248,7 +251,26 @@ int logicalNeg(int x) {
  *  Rating: 4
  */
 int howManyBits(int x) {
-  return 0;
+  int sign = x >> 31;
+  int _16bits, _8bits, _4bits, _2bits, _1bits, _x;
+  _x = (x & ~sign) | (~x & sign);
+
+  _16bits = !!(_x >> 16) << 4;
+  _x = _x >> _16bits;
+
+  _8bits = !!(_x >> 8) << 3;
+  _x = _x >> _8bits;
+
+  _4bits = !!(_x >> 4) << 2;
+  _x = _x >> _4bits;
+
+  _2bits = !!(_x >> 2) << 1;
+  _x = _x >> _2bits;
+
+  _1bits = !!(_x >> 1);
+  _x = _x >> _1bits;
+
+  return _16bits + _8bits + _4bits + _2bits + _1bits + _x + 1;
 }
 //float
 /* 
