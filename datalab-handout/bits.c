@@ -285,7 +285,20 @@ int howManyBits(int x) {
  *   Rating: 4
  */
 unsigned floatScale2(unsigned uf) {
-  return 2;
+  unsigned sign,isRegular,uf_unsign;
+  sign = uf & 0x80000000;
+  uf_unsign = uf ^ sign;
+  if (!uf_unsign || !(uf_unsign ^ (0xff << 23))){
+    return uf_unsign + sign;
+  }
+  isRegular = uf_unsign >> 23;
+  if(!isRegular){
+    return (uf << 1) + sign;
+  }else if(!(isRegular ^ 0xff)){
+    return uf;
+  }else{
+    return uf + (1 << 23);
+  }
 }
 /* 
  * floatFloat2Int - Return bit-level equivalent of expression (int) f
@@ -300,7 +313,20 @@ unsigned floatScale2(unsigned uf) {
  *   Rating: 4
  */
 int floatFloat2Int(unsigned uf) {
-  return 2;
+  unsigned sign, frac, exp;
+  int bias;
+  exp = (uf >> 23) & 0xFF;
+  frac = uf & 0x007FFFFF;
+  sign = uf & 0x80000000;
+  bias = exp - 127;
+  if (exp == 255 || bias >= 31){
+    return 0x80000000u;
+  }
+  if(!exp || bias < 0){
+    return 0;
+  }else {
+    return !sign ? (frac >> (23 - bias)) + (1 << bias) : -((frac >> (23 - bias)) + (1 << bias));
+  }
 }
 /* 
  * floatPower2 - Return bit-level equivalent of the expression 2.0^x
@@ -316,5 +342,15 @@ int floatFloat2Int(unsigned uf) {
  *   Rating: 4
  */
 unsigned floatPower2(int x) {
-    return 2;
+  if (x <= -150){
+    return 0;
+  }else if(x > 127){
+    return 0x7f800000u;
+  }
+
+  if(x < -126){
+    return 1 << (x + 127);
+  }else{
+    return (x + 127) << 23;
+  }
 }
