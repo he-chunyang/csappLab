@@ -4,10 +4,9 @@
 apple silicon是arm架构，即使在虚拟机上也无法支持GDB和LLDB的debug，解决方案参考 https://docs.orbstack.dev/machines/#debugging-with-gdb-lldb
 ```
 sudo apt install qemu-user-static
-qemu-x86_64-static -g 1234 ./hello
-
+qemu-x86_64-static -g 1234 ./bomb
 # in another terminal
-gdb ./hello
+gdb ./bomb
 target remote :1234
 continue
 ```
@@ -69,8 +68,39 @@ continue
 可以查看```strings_not_equal```使用的两个寄存器```$rdi, $rsi```。其中```$rdi```是我们输入的值，```$rsi```是从```$0x402400```得到的值。由此可判断```$0x402400```就是我们需要的字符串。
 
 ```
-x/s $esi
-> "Border relations with Canada have never been better."
+> x/s $esi
+"Border relations with Canada have never been better."
 ```
 
 ## phase2
+
+>指令如果访问了内存（用 () 或 [] 括起来的形式）→ 就是地址否则就是纯粹的值操作
+
+
+判断输入的数字数量，需要>=6
+```
+0x400f05 <phase_2+9>    callq  0x40145c <read_six_numbers> 
+```
+
+判断数列的第一个数字是不是1
+```
+0x400f0a <phase_2+14>   cmpl   $0x1,(%rsp
+```
+
+循环体，判断数列是不是指数形式。
+```
+0x400f17 <phase_2+27>   mov    -0x4(%rbx),%eax                                                                            
+0x400f1a <phase_2+30>   add    %eax,%eax                                                                                  
+0x400f1c <phase_2+32>   cmp    %eax,(%rbx)                                                                                
+0x400f1e <phase_2+34>   je     0x400f25 <phase_2+41>                                                                      
+0x400f20 <phase_2+36>   callq  0x40143a <explode_bomb>
+```
+循环控制，判断当前操作数是不是第六个数字，如果不是则继续循环。
+```
+0x400f25 <phase_2+41>   add    $0x4,%rbx                                                                                  
+0x400f29 <phase_2+45>   cmp    %rbp,%rbx                                                                                  
+0x400f2c <phase_2+48>   jne    0x400f17 <phase_2+27>                                                                    
+0x400f2e <phase_2+50>   jmp    0x400f3c <phase_2+64> 
+```
+
+## phase3
